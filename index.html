@@ -4,176 +4,629 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NGワードゲーム</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
+        @keyframes pop-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .pop {
+            animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background: linear-gradient(to top, #accbee 0%, #e7f0fd 100%);
             text-align: center;
             flex-direction: column;
+            color: #333a4d;
         }
         .game-container {
-            background-color: #fff;
-            padding: 50px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            width: 80%;
-            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 2vw; /* Reduced padding */
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            width: 95%;
+            max-width: 1300px; /* Reduced max-width */
+            position: relative; /* For settings button positioning */
         }
         h1 {
-            color: #333;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+            font-size: clamp(2rem, 3.2vw, 2.8rem); /* Reduced responsive scaling */
+            font-weight: 800;
+            margin-bottom: 16px; /* Reduced margin */
         }
-        .ng-word-area, .score-area {
-            font-size: 2rem;
-            margin-bottom: 30px;
+
+        /* Accordion Styles */
+        .genre-container {
+            margin-bottom: 20px; /* Reduced margin */
         }
-        .ng-word-display {
-            font-size: 4rem;
-            font-weight: bold;
-            color: #d9534f;
-            display: block;
-            margin-top: 10px;
+        #genreAccordion {
+            border-radius: 15px;
+            background-color: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
-        .score-counter {
-            font-size: 4rem;
-            font-weight: bold;
-            color: #5cb85c;
-            display: block;
-            margin-top: 10px;
+        #genreAccordion[open] {
+            background-color: rgba(255, 255, 255, 1);
         }
-        .game-buttons button {
-            padding: 15px 30px;
-            font-size: 1.5rem;
+        #genreAccordion summary {
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            list-style: none; /* Remove default marker */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #genreAccordion summary::after {
+            content: '▼';
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+        #genreAccordion[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .summary-selection {
+            color: #007bff;
+            font-weight: 800;
+            margin-left: 10px;
+        }
+
+        .genre-buttons {
+            padding: 10px 20px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        .genre-buttons button {
+            padding: 10px 18px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
             border: none;
-            border-radius: 5px;
-            color: #fff;
-            margin: 0 10px;
-            transition: background-color 0.3s;
+            border-radius: 20px;
+            background-color: #e9ecef;
+            color: #333a4d;
+            transition: all 0.3s ease;
         }
-        .game-buttons button:hover {
-            opacity: 0.8;
+        .genre-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .genre-buttons button.active {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(79, 172, 254, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .display-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            width: 100%;
+            margin-bottom: 20px; /* Apply margin here */
+        }
+        .ng-word-area, .score-area {
+            font-size: clamp(1.2rem, 1.6vw, 1.5rem); /* Reduced responsive scaling */
+            font-weight: 700;
+            flex: 1; /* Make them share space */
+        }
+        .ng-word-display {
+            font-size: clamp(3.5rem, 8vw, 7rem); /* Reduced responsive NG word size */
+            font-weight: 800;
+            color: #ff6b6b;
+            display: flex; /* Use flexbox for centering */
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+            min-height: 110px; /* Reduced min-height */
+            line-height: 1.1; /* Use unitless line-height for flexibility */
+            word-wrap: break-word;
+            overflow-wrap: break-word; /* Better word breaking */
+        }
+        .score-counter {
+            font-size: clamp(3.5rem, 8vw, 7rem); /* Match the NG word size */
+            font-weight: 800;
+            color: #48c9b0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+            min-height: 110px;
+            line-height: 1.1;
         }
         .game-buttons {
-            display: flex; /* Flexboxを使い、ボタンを横並びにする */
-            justify-content: center; /* ボタンを中央に配置 */
-            gap: 20px; /* ボタン間の間隔を設定 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 24px; /* Reduced margin */
+        }
+        .game-buttons button {
+            padding: 15px 0;
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            line-height: 1;
+        }
+        .game-buttons button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
         }
         #plusButton {
-            background-color: #5cb85c;
+            background: linear-gradient(45deg, #2ed8b6, #59e0c5);
         }
         #minusButton {
-            background-color: #f0ad4e;
+            background: linear-gradient(45deg, #ffb64d, #ffcb80);
         }
         #updateNgWordButton {
-            background-color: #0275d8;
+            width: auto;
+            height: auto;
+            border-radius: 35px;
+            font-size: 1.2rem;
+            padding: 20px 35px;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+        }
+        .timer-area {
+            font-size: 1.5rem;
+            margin-bottom: 12px; /* Reduced margin */
+            font-weight: 700;
+        }
+        .timer-display {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #3498db;
+            display: block;
+            margin-top: 5px;
+        }
+        .timer-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 24px; /* Reduced margin */
+        }
+        .timer-buttons button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            background-color: #5dade2;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .timer-buttons button:hover {
+            background-color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        /* Settings Modal */
+        .settings-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #555;
+            transition: transform 0.3s ease;
+        }
+        .settings-button:hover {
+            transform: rotate(90deg);
+        }
+        .fullscreen-button {
+            position: absolute;
+            top: 20px;
+            right: 70px; /* Position next to settings */
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            cursor: pointer;
+            color: #555;
+            transition: transform 0.2s ease;
+        }
+        .fullscreen-button:hover {
+            transform: scale(1.1);
+        }
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+        .settings-content {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+        }
+        .settings-content h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        .setting-item {
+            margin-bottom: 20px;
+        }
+        .setting-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #555;
+        }
+        .setting-item input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+        .settings-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .settings-buttons button {
+            padding: 10px 25px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        #saveSettingsButton {
+            background-color: #28a745;
+            color: white;
+        }
+        #closeSettingsButton {
+            background-color: #6c757d;
+            color: white;
         }
     </style>
 </head>
 <body>
 
+<div id="settingsModal" style="display: none;" class="settings-modal">
+    <div class="settings-content">
+        <h2>設定</h2>
+        <div class="setting-item">
+            <label for="settingTimerDuration">タイマー初期値 (秒)</label>
+            <input type="number" id="settingTimerDuration" min="10" max="600" step="10">
+        </div>
+        <div class="setting-item">
+            <label for="settingHistorySize">履歴の数 (重複を避ける単語数)</label>
+            <input type="number" id="settingHistorySize" min="1" max="50" step="1">
+        </div>
+        <div class="settings-buttons">
+            <button id="saveSettingsButton">保存</button>
+            <button id="closeSettingsButton">閉じる</button>
+        </div>
+    </div>
+</div>
+
 <div class="game-container">
+    <button id="fullscreenButton" class="fullscreen-button">⛶</button>
+    <button id="openSettingsButton" class="settings-button">⚙️</button>
     <h1>NGワードゲーム</h1>
 
-    <div class="ng-word-area">
-        私の現在のNGワード: <span id="ngWordDisplay" class="ng-word-display"></span>
+    <div class="genre-container">
+        <details id="genreAccordion">
+            <summary>
+                <span>ジャンル: <span id="selectedGenre" class="summary-selection">すべて</span></span>
+            </summary>
+            <div class="genre-buttons" id="genreSelection">
+                <button data-genre="all" class="active">すべて</button>
+                <button data-genre="food">食べ物</button>
+                <button data-genre="creatures">生き物</button>
+                <button data-genre="nature">自然</button>
+                <button data-genre="places">場所</button>
+                <button data-genre="vehicles">乗り物</button>
+                <button data-genre="school">学校</button>
+                <button data-genre="body">体</button>
+                <button data-genre="actions">動作</button>
+                <button data-genre="emotions">感情</button>
+                <button data-genre="adjectives">様子ことば</button>
+            </div>
+        </details>
     </div>
 
-    <div class="score-area">
-        ポイント: <span id="scoreCounter" class="score-counter">0</span>
+    <div class="display-row">
+        <div class="ng-word-area">
+            現在のNGワード
+            <span id="ngWordDisplay" class="ng-word-display pop"></span>
+        </div>
+
+        <div class="score-area">
+            ポイント
+            <span id="scoreCounter" class="score-counter pop">0</span>
+        </div>
+    </div>
+
+    <div class="timer-area">
+        タイマー
+        <span id="timerDisplay" class="timer-display">01:00</span>
+    </div>
+
+    <div class="timer-buttons">
+        <button id="startTimerButton">スタート</button>
+        <button id="stopTimerButton">ストップ</button>
+        <button id="resetTimerButton">リセット</button>
     </div>
 
     <div class="game-buttons">
         <button id="plusButton">+</button>
         <button id="minusButton">-</button>
-        <button id="updateNgWordButton">NGワードを更新</button>
+        <button id="updateNgWordButton">NGワード更新</button>
     </div>
 </div>
 
 <script>
-    const ngWords = [
-        // 食べ物 (50個)
-        "りんご", "バナナ", "みかん", "レモン", "いちご", "メロン", "ぶどう", "もも", "すいか", "さくらんぼ",
-        "パン", "ごはん", "おにぎり", "もち", "うどん", "そば", "ラーメン", "カレー", "パスタ", "サラダ",
-        "たまご", "牛乳", "チーズ", "バター", "やさい", "肉", "魚", "えび", "かに", "たこ",
-        "おかし", "ケーキ", "クッキー", "アイス", "チョコ", "あめ", "ガム", "プリン", "ゼリー", "ポテト",
-        "コーヒー", "お茶", "ジュース", "水", "ビール", "ワイン", "サイダー", "コーラ", "炭酸", "甘い",
+    const wordCategories = {
+        food: ["りんご", "バナナ", "みかん", "いちご", "メロン", "ぶどう", "すいか", "パン", "ごはん", "おにぎり", "うどん", "ラーメン", "カレー", "パスタ", "たまご", "牛乳", "チーズ", "やさい", "肉", "魚", "おかし", "ケーキ", "アイス", "チョコ", "ジュース"],
+        creatures: ["ねこ", "いぬ", "ぞう", "きりん", "くま", "うさぎ", "ぱんだ", "とり", "さる", "ライオン", "トラ", "ペンギン", "イルカ", "くじら", "カエル", "ヘビ", "牛", "馬", "豚", "ひつじ", "にわとり", "ちょう", "はち", "あり", "くも", "とんぼ"],
+        nature: ["雨", "雪", "風", "雲", "虹", "空", "太陽", "月", "星", "山", "川", "海", "森", "林", "草", "花", "木", "石", "土", "滝", "池", "天気", "光", "影"],
+        places: ["学校", "駅", "空港", "港", "家", "ビル", "公園", "お店", "銀行", "交差点", "道路", "歩道", "橋", "体育館", "校庭", "教室", "図書館", "病院", "郵便局", "コンビニ"],
+        vehicles: ["電車", "車", "飛行機", "船", "自転車", "バス", "タクシー", "新幹線", "ロケット", "パトカー", "消防車", "救急車"],
+        school: ["えんぴつ", "けしゴム", "本", "教科書", "ノート", "つくえ", "いす", "黒板", "ふでばこ", "はさみ", "のり", "かみ", "ふで", "えのぐ", "地図", "宿題", "テスト", "給食", "そうじ"],
+        body: ["顔", "手", "足", "目", "鼻", "口", "耳", "頭", "体", "髪", "爪", "肌", "声", "笑顔", "涙", "心"],
+        actions: ["笑う", "泣く", "怒る", "考える", "学ぶ", "働く", "休む", "見る", "聞く", "話す", "書く", "読む", "食べる", "飲む", "寝る", "起きる", "座る", "走る", "飛ぶ", "泳ぐ", "歌う", "踊る", "遊ぶ", "作る", "壊す"],
+        emotions: ["うれしい", "かなしい", "さびしい", "こわい", "楽しい", "驚く", "好き", "嫌い", "愛", "希望", "やさしい", "厳しい", "面白い", "つまらない", "安心", "心配", "元気", "勇気"],
+        adjectives: ["温かい", "冷たい", "熱い", "寒い", "高い", "低い", "広い", "狭い", "大きい", "小さい", "長い", "短い", "重い", "軽い", "速い", "遅い", "太い", "細い", "明るい", "暗い", "簡単", "難しい", "強い", "弱い", "多い", "少ない", "良い", "悪い", "古い", "新しい", "遠い", "近い", "赤い", "青い", "白い", "黒い", "甘い", "からい", "しょっぱい", "すっぱい"]
+    };
 
-        // 動物・生き物 (40個)
-        "ねこ", "いぬ", "ぞう", "きりん", "くま", "うさぎ", "ぱんだ", "とり", "魚", "さる",
-        "ライオン", "トラ", "わに", "かば", "ペンギン", "イルカ", "くじら", "カエル", "ヘビ", "とかげ",
-        "牛", "馬", "豚", "ひつじ", "ヤギ", "にわとり", "アヒル", "ハト", "カラス", "スズメ",
-        "ちょう", "はち", "あり", "くも", "かまきり", "とんぼ", "ホタル", "テントウムシ", "バッタ", "セミ",
-        
-        // 自然・景色 (30個)
-        "雨", "雪", "風", "雲", "虹", "空", "太陽", "月", "星", "山",
-        "川", "海", "森", "林", "草", "花", "木", "石", "土", "道",
-        "外", "うち", "道", "橋", "家", "ビル", "公園", "畑", "滝", "池",
-
-        // 日常生活・場所 (80個)
-        "学校", "仕事", "電車", "車", "飛行機", "船", "自転車", "歩道", "信号", "道路",
-        "電話", "時計", "鍵", "財布", "手帳", "えんぴつ", "けしゴム", "本", "かばん", "かさ",
-        "洋服", "くつ", "帽子", "めがね", "手袋", "靴下", "布団", "まくら", "窓", "戸",
-        "朝", "昼", "夜", "今", "明日", "昨日", "時間", "季節", "月", "日",
-        "好き", "嫌い", "愛", "友", "家族", "ともだち", "恋人", "先生", "生徒", "同僚",
-        "顔", "手", "足", "目", "鼻", "口", "耳", "頭", "心", "体",
-        "笑う", "泣く", "怒る", "楽しい", "悲しい", "驚く", "考える", "学ぶ", "働く", "休む",
-        "見る", "聞く", "話す", "書く", "読む", "食べる", "飲む", "寝る", "起きる", "座る",
-        
-        // 感情・状態・その他 (100個)
-        "うれしい", "かなしい", "さびしい", "こわい", "やさしい", "厳しい", "面白い", "つまらない", "温かい", "冷たい",
-        "熱い", "寒い", "高い", "低い", "広い", "狭い", "大きい", "小さい", "長い", "短い",
-        "重い", "軽い", "速い", "遅い", "太い", "細い", "明るい", "暗い", "簡単", "難しい",
-        "強い", "弱い", "多い", "少ない", "良い", "悪い", "古い", "新しい", "遠い", "近い",
-        "前", "後", "右", "左", "上", "下", "中", "外", "向こう", "こちら",
-        "声", "音", "色", "形", "光", "影", "夢", "希望", "笑顔", "涙",
-        "歌", "音楽", "映画", "小説", "漫画", "絵", "写真", "手紙", "日記", "地図",
-        "道具", "機械", "ひも", "はさみ", "のり", "はこ", "かみ", "ふで", "えのぐ", "せっけん",
-        "お金", "銀行", "財布", "貯金", "買い物", "お店", "お客さん", "売る", "買う", "きっぷ"
-    ];
-    
-    let currentNgWord = '';
+    const allWords = Object.values(wordCategories).flat();
+    let currentWordList = allWords;
     let score = 0;
+    let wordHistory = [];
+    let HISTORY_SIZE = 10;
 
+    // Timer feature variables
+    let timerInterval = null;
+    let defaultTimerDuration = 60;
+    let totalSeconds = defaultTimerDuration;
+    let isTimerRunning = false;
+
+    // DOM Elements
     const ngWordDisplay = document.getElementById('ngWordDisplay');
     const scoreCounter = document.getElementById('scoreCounter');
     const plusButton = document.getElementById('plusButton');
     const minusButton = document.getElementById('minusButton');
     const updateNgWordButton = document.getElementById('updateNgWordButton');
+    const genreSelectionContainer = document.getElementById('genreSelection');
+    const genreAccordion = document.getElementById('genreAccordion');
+    const selectedGenreSpan = document.getElementById('selectedGenre');
 
-    // ランダムなNGワードを生成して表示する関数
-    function generateNewNgWord() {
-        const randomIndex = Math.floor(Math.random() * ngWords.length);
-        currentNgWord = ngWords[randomIndex];
-        ngWordDisplay.textContent = currentNgWord;
+    // Timer feature DOM Elements
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startTimerButton = document.getElementById('startTimerButton');
+    const stopTimerButton = document.getElementById('stopTimerButton');
+    const resetTimerButton = document.getElementById('resetTimerButton');
+
+    // Settings DOM Elements
+    const settingsModal = document.getElementById('settingsModal');
+    const openSettingsButton = document.getElementById('openSettingsButton');
+    const closeSettingsButton = document.getElementById('closeSettingsButton');
+    const saveSettingsButton = document.getElementById('saveSettingsButton');
+    const settingTimerDurationInput = document.getElementById('settingTimerDuration');
+    const settingHistorySizeInput = document.getElementById('settingHistorySize');
+
+    // Fullscreen DOM Element
+    const fullscreenButton = document.getElementById('fullscreenButton');
+
+
+    function triggerAnimation(element) {
+        element.classList.remove('pop');
+        void element.offsetWidth; // Reflow to restart animation
+        element.classList.add('pop');
     }
 
-    // ゲーム開始時の処理
-    generateNewNgWord();
+    function generateNewNgWord() {
+        if (currentWordList.length === 0) {
+            ngWordDisplay.textContent = "単語なし";
+            return;
+        }
 
-    // ポイント加算ボタン
+        let availableWords = currentWordList.filter(word => !wordHistory.includes(word));
+        if (availableWords.length === 0) {
+            wordHistory = [];
+            availableWords = currentWordList;
+        }
+
+        const randomIndex = Math.floor(Math.random() * availableWords.length);
+        const currentNgWord = availableWords[randomIndex];
+        
+        ngWordDisplay.textContent = currentNgWord;
+        triggerAnimation(ngWordDisplay);
+
+        wordHistory.push(currentNgWord);
+        if (wordHistory.length > HISTORY_SIZE) {
+            wordHistory.shift();
+        }
+    }
+
+    function updateScore(newScore) {
+        score = newScore;
+        scoreCounter.textContent = score;
+        triggerAnimation(scoreCounter);
+    }
+
+    // --- Timer feature functions ---
+    function updateTimerDisplay() {
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+        timerDisplay.textContent = `${minutes}:${seconds}`;
+    }
+
+    function startTimer() {
+        if (isTimerRunning) return;
+        isTimerRunning = true;
+        timerInterval = setInterval(() => {
+            totalSeconds--;
+            updateTimerDisplay();
+            if (totalSeconds <= 0) {
+                stopTimer();
+                alert("時間です！");
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+    }
+
+    function resetTimer() {
+        stopTimer();
+        totalSeconds = defaultTimerDuration;
+        updateTimerDisplay();
+    }
+
+    // --- Settings functions ---
+    function loadSettings() {
+        const savedDuration = localStorage.getItem('ng_timerDuration');
+        const savedHistorySize = localStorage.getItem('ng_historySize');
+
+        if (savedDuration) {
+            defaultTimerDuration = parseInt(savedDuration, 10);
+        }
+        if (savedHistorySize) {
+            HISTORY_SIZE = parseInt(savedHistorySize, 10);
+        }
+
+        settingTimerDurationInput.value = defaultTimerDuration;
+        settingHistorySizeInput.value = HISTORY_SIZE;
+        
+        resetTimer();
+    }
+
+    function saveSettings() {
+        const newDuration = parseInt(settingTimerDurationInput.value, 10);
+        const newHistorySize = parseInt(settingHistorySizeInput.value, 10);
+
+        if (!isNaN(newDuration) && newDuration >= 10) {
+            defaultTimerDuration = newDuration;
+            localStorage.setItem('ng_timerDuration', defaultTimerDuration);
+        }
+        if (!isNaN(newHistorySize) && newHistorySize >= 1) {
+            HISTORY_SIZE = newHistorySize;
+            localStorage.setItem('ng_historySize', HISTORY_SIZE);
+        }
+
+        resetTimer();
+        settingsModal.style.display = 'none';
+    }
+
+    // --- Fullscreen functions ---
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                alert(`フルスクリーンモードへの切り替えに失敗しました: ${err.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    function updateFullscreenButton() {
+        if (document.fullscreenElement) {
+            fullscreenButton.textContent = '↘↙';
+        } else {
+            fullscreenButton.textContent = '⛶';
+        }
+    }
+
+    // --- Event Listeners ---
+    genreSelectionContainer.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            genreSelectionContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+
+            const genre = e.target.dataset.genre;
+            currentWordList = (genre === 'all') ? allWords : wordCategories[genre];
+            
+            selectedGenreSpan.textContent = e.target.textContent;
+            genreAccordion.removeAttribute('open');
+
+            generateNewNgWord();
+        }
+    });
+
     plusButton.addEventListener('click', () => {
-        score++;
-        scoreCounter.textContent = score;
+        updateScore(score + 1);
     });
 
-    // ポイント減算ボタン
     minusButton.addEventListener('click', () => {
-        score--;
-        scoreCounter.textContent = score;
+        if (score > 0) {
+            updateScore(score - 1);
+        }
     });
 
-    // NGワード更新ボタン
     updateNgWordButton.addEventListener('click', () => {
         generateNewNgWord();
     });
-</script>
 
+    // Timer feature event listeners
+    startTimerButton.addEventListener('click', startTimer);
+    stopTimerButton.addEventListener('click', stopTimer);
+    resetTimerButton.addEventListener('click', resetTimer);
+
+    // Settings event listeners
+    openSettingsButton.addEventListener('click', () => {
+        settingsModal.style.display = 'flex';
+    });
+    closeSettingsButton.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+    });
+    saveSettingsButton.addEventListener('click', saveSettings);
+
+    // Fullscreen event listeners
+    fullscreenButton.addEventListener('click', toggleFullScreen);
+    document.addEventListener('fullscreenchange', updateFullscreenButton);
+
+    // --- Initial setup ---
+    loadSettings();
+    generateNewNgWord();
+    updateScore(0);
+    updateFullscreenButton();
+
+</script>
 </body>
 </html>
