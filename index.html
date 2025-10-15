@@ -127,6 +127,7 @@
             height: 100%;
             line-height: 1.1;
             word-break: break-all;
+            white-space: nowrap;
         }
         .ng-word-display { color: #ff6b6b; }
         .score-counter { color: #48c9b0; }
@@ -546,9 +547,7 @@
     });
 
     minusButton.addEventListener('click', () => {
-        if (score > 0) {
-            updateScore(score - 1);
-        }
+        updateScore(score - 1);
     });
 
     updateNgWordButton.addEventListener('click', () => {
